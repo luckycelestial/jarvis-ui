@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Activity, 
   Cpu, 
+  Activity, 
   Power, 
   ShieldCheck, 
   Zap, 
@@ -13,67 +13,91 @@ import {
   Clock,
   AlertTriangle
 } from "lucide-react";
+import { getJarvisStatus, startBrain } from "./actions";
 
-const HEAD_IP = "34.69.30.127";
-const HEAD_URL = "/api/jarvis";
+// --- Types ---
+interface SystemStatus {
+  brain_status: string;
+  head_status: string;
+  systems_nominal: boolean;
+}
 
 export default function JarvisHUD() {
-  const [headStatus, setHeadStatus] = useState("OFFLINE");
-  const [brainStatus, setBrainStatus] = useState("UNKNOWN");
-  const [systemsNominal, setSystemsNominal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState<string[]>(["[SYSTEM] Initializing HUD...", "[SYSTEM] Establishing link to Gateway..."]);
+  const [status, setStatus] = useState<SystemStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [isActivating, setIsActivating] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
 
+  // Digital clock effect
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
       setCurrentTime(now.toLocaleTimeString("en-US", { hour12: false }));
     }, 1000);
-    
-    fetchStatus();
-    const statusInterval = setInterval(fetchStatus, 5000);
-
-    return () => {
-      clearInterval(timer);
-      clearInterval(statusInterval);
-    };
+    return () => clearInterval(timer);
   }, []);
+
+  const addLog = (msg: string, type: "info" | "error" | "action" = "info") => {
+    const prefix = type === "error" ? "[ERROR]" : type === "action" ? "[ACTION]" : "[SYSTEM]";
+    setLogs(prev => [...prev.slice(-12), `${prefix} ${msg}`]);
+  };
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(`${HEAD_URL}?path=status`);
-      const data = await res.json();
-      setHeadStatus(data.head_status || "RUNNING");
-      setBrainStatus(data.brain_status || "UNKNOWN");
-      setSystemsNominal(data.systems_nominal || false);
-      addLog(`[PING] Heartbeat received. Brain: ${data.brain_status}`);
+      const data = await getJarvisStatus();
+      if (data) {
+        if (!status) addLog("Link to Head Gateway established.", "info");
+        setStatus(data);
+      } else {
+        addLog("Failed to establish link to Head Gateway.", "error");
+        setStatus(null);
+      }
     } catch (err) {
-      setHeadStatus("OFFLINE");
-      setBrainStatus("UNREACHABLE");
-      setSystemsNominal(false);
-      addLog("[ERROR] Failed to establish link to Head Gateway.");
-    }
-  };
-
-  const addLog = (msg: string) => {
-    setLogs(prev => [...prev.slice(-9), msg]);
-  };
-
-  const initiateBrain = async () => {
-    setLoading(true);
-    addLog("[ACTION] Initiating Brain activation sequence...");
-    try {
-      const res = await fetch(`${HEAD_URL}?path=start_brain`, { method: "POST" });
-      const data = await res.json();
-      addLog(`[SYSTEM] ${data.message}`);
-      setTimeout(fetchStatus, 2000);
-    } catch (err) {
-      addLog("[ERROR] Brain activation protocol failed.");
+      addLog("Link interrupted. Reconnecting...", "error");
+      setStatus(null);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    addLog("Initializing HUD...", "info");
+    addLog("Establishing link to Gateway...", "info");
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 15000); // Check every 15s
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleStartBrain = async () => {
+    setIsActivating(true);
+    addLog("Initiating Brain activation sequence...", "action");
+    
+    try {
+      const success = await startBrain();
+      if (success) {
+        addLog("Activation command received. Warming up cores...", "info");
+        // Poll faster for 1 minute
+        let pings = 0;
+        const poll = setInterval(async () => {
+          await fetchStatus();
+          pings++;
+          if (pings > 10 || status?.brain_status === "RUNNING") {
+            clearInterval(poll);
+            setIsActivating(false);
+          }
+        }, 5000);
+      } else {
+        addLog("Brain activation protocol failed.", "error");
+        setIsActivating(false);
+      }
+    } catch (err) {
+      addLog("Critical failure in transmission.", "error");
+      setIsActivating(false);
+    }
+  };
+
+  const systemsNominal = status?.systems_nominal ?? false;
 
   return (
     <main className="min-h-screen bg-background text-foreground relative overflow-hidden font-mono p-6">
@@ -119,18 +143,18 @@ export default function JarvisHUD() {
         <div className="space-y-6">
           <StatusCard 
             title="Head Gateway" 
-            status={headStatus} 
+            status={status?.head_status || "OFFLINE"} 
             icon={<Cpu className="text-stark-cyan" />}
-            ip={HEAD_IP}
-            active={headStatus === "RUNNING"}
+            ip="34.69.30.127"
+            active={status?.head_status === "RUNNING"}
           />
           <StatusCard 
             title="Aristotle Brain" 
-            status={brainStatus} 
+            status={status?.brain_status || "UNREACHABLE"} 
             icon={<Activity className="text-stark-cyan" />}
             ip="34.93.105.44"
-            active={brainStatus === "RUNNING"}
-            warning={brainStatus === "TERMINATED"}
+            active={status?.brain_status === "RUNNING"}
+            warning={status?.brain_status === "TERMINATED"}
           />
         </div>
 
@@ -150,31 +174,31 @@ export default function JarvisHUD() {
             />
             
             <button
-              onClick={initiateBrain}
-              disabled={loading || brainStatus === "RUNNING"}
+              onClick={handleStartBrain}
+              disabled={isActivating || status?.brain_status === "RUNNING"}
               className={`
                 relative w-48 h-48 rounded-full flex flex-col items-center justify-center gap-2
                 transition-all duration-500 stark-border
-                ${brainStatus === "RUNNING" ? "bg-stark-cyan/20 border-stark-cyan" : "bg-stark-cyan/5 border-stark-cyan/40 hover:bg-stark-cyan/10"}
-                ${loading ? "animate-pulse" : ""}
+                ${status?.brain_status === "RUNNING" ? "bg-stark-cyan/20 border-stark-cyan" : "bg-stark-cyan/5 border-stark-cyan/40 hover:bg-stark-cyan/10"}
+                ${isActivating ? "animate-pulse" : ""}
               `}
             >
-              <Power size={48} className={brainStatus === "RUNNING" ? "text-stark-cyan stark-glow" : "text-stark-cyan/60"} />
+              <Power size={48} className={status?.brain_status === "RUNNING" ? "text-stark-cyan stark-glow" : "text-stark-cyan/60"} />
               <span className="text-xs font-bold tracking-widest text-stark-cyan/80">
-                {loading ? "WAKING..." : brainStatus === "RUNNING" ? "ACTIVE" : "START BRAIN"}
+                {isActivating ? "WAKING..." : status?.brain_status === "RUNNING" ? "ACTIVE" : "START BRAIN"}
               </span>
               
               {/* Inner Glow */}
-              <div className={`absolute inset-4 rounded-full border-2 border-stark-cyan/20 ${brainStatus === "RUNNING" ? "animate-pulse-cyan" : ""}`} />
+              <div className={`absolute inset-4 rounded-full border-2 border-stark-cyan/20 ${status?.brain_status === "RUNNING" ? "animate-pulse-cyan" : ""}`} />
             </button>
           </div>
 
           <div className="w-full stark-border bg-black/40 backdrop-blur-md p-4 flex items-center justify-between">
              <div className="flex items-center gap-3">
                <Zap className={systemsNominal ? "text-stark-cyan" : "text-stark-red"} size={20} />
-               <span className="text-sm">SYSTEMS INTEGRITY</span>
+               <span className="text-sm text-stark-cyan/80">SYSTEMS INTEGRITY</span>
              </div>
-             <span className={`text-sm font-bold ${systemsNominal ? "text-stark-cyan" : "text-stark-red"}`}>
+             <span className={`text-sm font-bold ${systemsNominal ? "text-stark-cyan stark-glow" : "text-stark-red animate-pulse"}`}>
                {systemsNominal ? "NOMINAL" : "DEGRADED"}
              </span>
           </div>
