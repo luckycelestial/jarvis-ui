@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const HEAD_IP = "34.69.30.127";
-const HEAD_URL = `http://${HEAD_IP}:8000`;
+const HEAD_URL = "/api/jarvis";
 
 export default function JarvisHUD() {
   const [headStatus, setHeadStatus] = useState("OFFLINE");
@@ -42,7 +42,7 @@ export default function JarvisHUD() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(`${HEAD_URL}/status`);
+      const res = await fetch(`${HEAD_URL}?path=status`);
       const data = await res.json();
       setHeadStatus(data.head_status || "RUNNING");
       setBrainStatus(data.brain_status || "UNKNOWN");
@@ -64,7 +64,7 @@ export default function JarvisHUD() {
     setLoading(true);
     addLog("[ACTION] Initiating Brain activation sequence...");
     try {
-      const res = await fetch(`${HEAD_URL}/start_brain`, { method: "POST" });
+      const res = await fetch(`${HEAD_URL}?path=start_brain`, { method: "POST" });
       const data = await res.json();
       addLog(`[SYSTEM] ${data.message}`);
       setTimeout(fetchStatus, 2000);
