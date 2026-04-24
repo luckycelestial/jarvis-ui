@@ -139,7 +139,7 @@ export default function JarvisHUD() {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "X-API-KEY": "stark-neural-link-alpha-99"
+        "X-API-KEY": process.env.NEXT_PUBLIC_JARVIS_SECRET || "stark-neural-link-alpha-99"
       },
       body: JSON.stringify({ command, params })
     }).then(res => {
