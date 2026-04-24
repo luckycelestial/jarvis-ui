@@ -14,7 +14,7 @@ export async function getJarvisStatus() {
       next: { revalidate: 0 }
     });
     if (!res.ok) throw new Error("Gateway error");
-    return await res.ok ? await res.json() : null;
+    return await res.json();
   } catch (error) {
     console.error("Status fetch failed:", error);
     return null;
