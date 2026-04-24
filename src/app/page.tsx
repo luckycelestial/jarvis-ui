@@ -181,6 +181,25 @@ export default function JarvisHUD() {
         text: rawResponse,
         timestamp: new Date()
       };
+      
+      // PARSE COMMANDS (LOCAL TABS)
+      // Supports both [LOCAL_OPEN: url] and [OPEN_TABS: url1, url2]
+      if (rawResponse.includes("[LOCAL_OPEN:") || rawResponse.includes("[OPEN_TABS:")) {
+        const localOpenMatch = rawResponse.match(/\[(?:LOCAL_OPEN|OPEN_TABS):\s*(.*?)\]/);
+        if (localOpenMatch) {
+          const urlsStr = localOpenMatch[1];
+          const urls = urlsStr.split(",").map(u => u.trim()).filter(u => u.length > 0);
+          
+          if (urls.length > 0) {
+            addLog(`Executing local tab protocol for ${urls.length} resources...`, "action");
+            triggerLocalCommand("open_tabs", { urls });
+            
+            // Clean the response text for display (remove the command tag)
+            jarvisMsg.text = rawResponse.replace(/\[(?:LOCAL_OPEN|OPEN_TABS):\s*.*?\]/g, "").trim();
+          }
+        }
+      }
+
       setMessages(prev => [...prev, jarvisMsg]);
       
       if (result.status === "error") {
