@@ -16,9 +16,24 @@
 # next.js
 /.next/
 /out/
+/server/
+/static/
+/cache/
+/diagnostics/
+/trace/
+/trace-build
+/turbopack/
+BUILD_ID
+*-manifest.json
+next-minimal-server.js.nft.json
+next-server.js.nft.json
+required-server-files.js
+required-server-files.json
+export-marker.json
 
 # production
 /build
+
 
 # misc
 .DS_Store
