@@ -74,5 +74,3 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
     </div>
   );
 }
-  );
-}
