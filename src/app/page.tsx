@@ -7,6 +7,7 @@ import { NodeMap } from "./components/NodeMap";
 import { SystemStats } from "./components/SystemStats";
 import { SystemLog } from "./components/SystemLog";
 import { ChatInterface } from "./components/ChatInterface";
+import { CoreDashboard } from "./components/CoreDashboard";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SystemStatus {
@@ -66,12 +67,12 @@ export default function JarvisHUD() {
       {/* Background HUD Layers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="scanline" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08)_0%,transparent_70%)]" />
-        <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.04)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
 
-      {/* TOP NAVIGATION BAR — z-40 so it floats above the reactor */}
-      <nav className="relative z-40 px-6 py-4 flex justify-between items-center border-b border-white/5 backdrop-blur-md bg-background/60 shrink-0">
+      {/* TOP NAVIGATION BAR */}
+      <nav className="relative z-40 px-6 py-4 flex justify-between items-center border-b border-white/5 backdrop-blur-md bg-black/60 shrink-0">
         <div className="flex items-center gap-6">
           <div className="text-stark-cyan text-lg font-black tracking-tighter">STARK INDUSTRIES</div>
           <div className="h-4 w-px bg-white/20" />
@@ -111,7 +112,7 @@ export default function JarvisHUD() {
               exit={{ opacity: 0 }}
               className="absolute inset-0"
             >
-              {/* Arc Reactor — full viewport height, centered, goes behind navbar */}
+              {/* Arc Reactor — full viewport height, goes behind navbar */}
               <div className="absolute inset-0 flex items-center justify-center z-10" style={{ top: "-48px" }}>
                 <ArcReactor 
                   isActive={bodyActive}
@@ -120,14 +121,14 @@ export default function JarvisHUD() {
                 />
               </div>
 
-              {/* LEFT PANELS — float over the reactor */}
-              <div className="absolute top-4 left-4 w-[300px] flex flex-col gap-4 z-20">
+              {/* LEFT PANELS — wider, floating over reactor */}
+              <div className="absolute top-4 left-4 w-[340px] flex flex-col gap-4 z-20">
                 <NodeMap headActive={true} bodyActive={bodyActive} />
                 <SystemLog bodyActive={bodyActive} isActivating={isActivating} />
               </div>
 
-              {/* RIGHT PANEL — float over the reactor */}
-              <div className="absolute top-4 right-4 w-[300px] z-20">
+              {/* RIGHT PANEL — wider */}
+              <div className="absolute top-4 right-4 w-[340px] z-20">
                 <SystemStats bodyActive={bodyActive} />
               </div>
             </motion.div>
@@ -152,16 +153,17 @@ export default function JarvisHUD() {
               key="core"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="h-full flex items-center justify-center text-stark-cyan/20 tracking-[1em] uppercase text-xs"
+              exit={{ opacity: 0 }}
+              className="h-full"
             >
-              Accessing Neural Engine Core... [ Restricted ]
+              <CoreDashboard />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* FOOTER */}
-      <footer className="relative z-40 px-6 py-3 flex justify-between items-center border-t border-white/5 bg-background/60 backdrop-blur-md opacity-60 shrink-0">
+      <footer className="relative z-40 px-6 py-3 flex justify-between items-center border-t border-white/5 bg-black/60 backdrop-blur-md opacity-60 shrink-0">
         <div className="text-[8px] uppercase tracking-[0.5em]">
           Neural Link: v4.2 {"//"}  Sub-Node Asia-South-1a
         </div>
