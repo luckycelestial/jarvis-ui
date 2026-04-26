@@ -7,18 +7,51 @@ const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
 export async function getJarvisStatus() {
   const cacheBuster = Date.now();
   const HEAD_URL = `https://${HEAD_DOMAIN}/status?t=${cacheBuster}`;
+  const BODY_URL = `https://${BODY_DOMAIN}/status?t=${cacheBuster}`;
 
+  let headData = null;
+  let bodyLive = false;
+
+  // Ping Head
   try {
     const res = await fetch(HEAD_URL, { 
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store'
     });
-    if (!res.ok) throw new Error("Gateway error");
-    return await res.json();
+    if (res.ok) headData = await res.json();
   } catch (error) {
-    console.error("Status fetch failed:", error);
-    return null;
+    console.error("Head status fetch failed:", error);
   }
+
+  // Ping Body directly from Vercel
+  try {
+    const res = await fetch(BODY_URL, { 
+      headers: { "X-API-KEY": JARVIS_SECRET },
+      cache: 'no-store'
+    });
+    if (res.ok) bodyLive = true;
+  } catch (error) {
+    console.error("Body status fetch failed:", error);
+  }
+
+  // If Head couldn't reach Body but Vercel can, override the status!
+  if (headData) {
+    if (bodyLive) {
+      headData.body_live = true;
+      headData.body_status = "RUNNING";
+      headData.systems_nominal = true;
+    }
+    return headData;
+  }
+
+  // Fallback if Head is completely unreachable
+  return {
+    head_status: "OFFLINE",
+    body_status: bodyLive ? "RUNNING" : "OFFLINE",
+    systems_nominal: bodyLive,
+    body_live: bodyLive,
+    vm_state: bodyLive ? "RUNNING" : "OFFLINE"
+  };
 }
 
 export async function startBody() {
