@@ -1,11 +1,11 @@
 "use server";
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
-const HEAD_IP = process.env.HEAD_IP || "34.69.30.127";
-const BODY_IP = process.env.BODY_IP || "34.93.105.44";
+const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
+const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
 
 export async function getJarvisStatus() {
-  const HEAD_URL = `http://${HEAD_IP}:8000/status`;
+  const HEAD_URL = `https://${HEAD_DOMAIN}/status`;
 
   try {
     const res = await fetch(HEAD_URL, { 
@@ -22,7 +22,7 @@ export async function getJarvisStatus() {
 }
 
 export async function startBody() {
-  const HEAD_URL = `http://${HEAD_IP}:8000/start_body`;
+  const HEAD_URL = `https://${HEAD_DOMAIN}/start_body`;
 
   try {
     const res = await fetch(HEAD_URL, { 
@@ -38,7 +38,7 @@ export async function startBody() {
 }
 
 export async function chatWithJarvis(prompt: string) {
-  const BODY_URL = `http://${BODY_IP}:8001/query`;
+  const BODY_URL = `https://${BODY_DOMAIN}/query`;
 
   try {
     const res = await fetch(BODY_URL, {
@@ -58,7 +58,7 @@ export async function chatWithJarvis(prompt: string) {
 }
 
 export async function runVMScript() {
-  const BODY_URL = `http://${BODY_IP}:8001/run_script`;
+  const BODY_URL = `https://${BODY_DOMAIN}/run_script`;
 
   try {
     const res = await fetch(BODY_URL, {
