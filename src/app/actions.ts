@@ -5,7 +5,8 @@ const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
 const BODY_DOMAIN = process.env.BODY_DOMAIN || "economic-examined-ridge-muslim.trycloudflare.com";
 
 export async function getJarvisStatus() {
-  const HEAD_URL = `https://${HEAD_DOMAIN}/status`;
+  const cacheBuster = Date.now();
+  const HEAD_URL = `https://${HEAD_DOMAIN}/status?t=${cacheBuster}`;
 
   try {
     const res = await fetch(HEAD_URL, { 
