@@ -81,7 +81,7 @@ export function ChatInterface() {
                   : 'bg-white/5 border border-white/10 text-foreground'}
               `}>
                 <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">
-                  {msg.role === 'user' ? 'Stark' : 'Jarvis'} // {msg.timestamp}
+                  {msg.role === 'user' ? 'Stark' : 'Jarvis'} {"//"} {msg.timestamp}
                 </div>
                 {msg.content}
               </div>
