@@ -28,13 +28,12 @@ function StatBar({ label, value, color }: StatBarProps) {
 }
 
 export function SystemStats({ bodyActive }: { bodyActive: boolean }) {
-  // Mock data for UI polish, will be real in later versions
   const cpu = bodyActive ? Math.floor(Math.random() * 20) + 15 : 0;
   const mem = bodyActive ? Math.floor(Math.random() * 10) + 40 : 0;
   const gpu = bodyActive ? Math.floor(Math.random() * 30) + 5 : 0;
 
   return (
-    <div className="w-64 stark-border bg-background/50 rounded-lg p-4 backdrop-blur-md">
+    <div className="w-full stark-border bg-background/60 rounded-lg p-4 backdrop-blur-md">
       <div className="text-[10px] text-stark-cyan/60 uppercase tracking-widest mb-4 flex justify-between">
         <span>Stark Bio-Hardware</span>
         <span className={bodyActive ? "text-stark-cyan" : "text-stark-red"}>

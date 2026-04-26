@@ -14,12 +14,12 @@ const FRAME_PATH = "/frames/arc-reactor/frame-";
 
 export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentFrame, setCurrentFrame] = useState(1);
+  const frameIndexRef = useRef(0);
   const framesRef = useRef<HTMLImageElement[]>([]);
   const requestRef = useRef<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Preload frames
+  // Preload all frames once
   useEffect(() => {
     let loadedCount = 0;
     const frames: HTMLImageElement[] = [];
@@ -37,99 +37,94 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
     }
     framesRef.current = frames;
 
-    return () => {
-      cancelAnimationFrame(requestRef.current);
-    };
+    return () => cancelAnimationFrame(requestRef.current);
   }, []);
 
-  const renderFrame = useCallback(() => {
+  // Animation loop using ref instead of state to avoid re-renders
+  const animate = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isLoaded) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const img = framesRef.current[currentFrame - 1];
+    const img = framesRef.current[frameIndexRef.current];
     if (img && img.complete) {
-      // CLEAR IS CRITICAL TO REMOVE THE "BLACK BOX"
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     }
 
-    let nextFrame = currentFrame + 1;
-    if (nextFrame > TOTAL_FRAMES) nextFrame = 1;
-    
-    setCurrentFrame(nextFrame);
-    requestRef.current = requestAnimationFrame(renderFrame);
-  }, [currentFrame, isLoaded]);
+    frameIndexRef.current = (frameIndexRef.current + 1) % TOTAL_FRAMES;
+    requestRef.current = requestAnimationFrame(animate);
+  }, [isLoaded]);
 
   useEffect(() => {
-    if (isActive || isActivating) {
-      requestRef.current = requestAnimationFrame(renderFrame);
+    if ((isActive || isActivating) && isLoaded) {
+      requestRef.current = requestAnimationFrame(animate);
     } else {
       cancelAnimationFrame(requestRef.current);
-      setCurrentFrame(1);
+      // Draw first frame as static preview
       const canvas = canvasRef.current;
-      if (canvas) {
+      if (canvas && isLoaded) {
         const ctx = canvas.getContext("2d");
         const img = framesRef.current[0];
-        if (ctx && img) {
+        if (ctx && img && img.complete) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
       }
     }
     return () => cancelAnimationFrame(requestRef.current);
-  }, [isActive, isActivating, renderFrame]);
+  }, [isActive, isActivating, isLoaded, animate]);
 
   return (
     <div 
-      className="relative group cursor-pointer flex flex-col items-center justify-center w-full h-full" 
+      className="relative group cursor-pointer flex flex-col items-center justify-center" 
       onClick={!isActive && !isActivating ? onInitiate : undefined}
     >
-      {/* HUD Rings - Dynamic Aura */}
+      {/* Decorative HUD rings — behind the reactor */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <motion.div 
-          animate={{ rotate: 360, scale: isActive ? 1.2 : 1 }}
+          animate={{ rotate: 360 }}
           transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          className="absolute w-[80vh] h-[80vh] border border-stark-cyan/10 rounded-full"
+          className="absolute w-[min(70vw,70vh)] h-[min(70vw,70vh)] border border-stark-cyan/10 rounded-full"
         />
         <motion.div 
-          animate={{ rotate: -360, scale: isActive ? 1.15 : 1 }}
-          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute w-[70vh] h-[70vh] border border-stark-cyan/5 rounded-full border-dashed"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 55, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[min(60vw,60vh)] h-[min(60vw,60vh)] border border-stark-cyan/5 rounded-full border-dashed"
         />
       </div>
 
-      {/* Main Reactor Canvas - Responsive but Sized to native 500px max */}
+      {/* Canvas — sized to fit available space, max 420px */}
       <div className={`
-        relative w-full max-w-[500px] aspect-square transition-all duration-1000 ease-in-out z-10
-        ${isActive ? 'opacity-100 scale-110 drop-shadow-[0_0_50px_rgba(34,211,238,0.6)]' : 'opacity-80 scale-100'}
+        relative w-[min(50vw,420px)] aspect-square transition-all duration-1000 ease-in-out
+        ${isActive ? 'drop-shadow-[0_0_60px_rgba(34,211,238,0.5)]' : ''}
         ${isActivating ? 'brightness-150' : ''}
       `}>
         <canvas
           ref={canvasRef}
           width={500}
           height={500}
-          className="w-full h-full object-contain mix-blend-screen"
+          className="w-full h-full"
+          style={{ mixBlendMode: "screen" }}
         />
         
-        {/* Core Status Pulse Overlays */}
         {isActivating && (
           <motion.div 
-            animate={{ opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }}
+            animate={{ opacity: [0, 0.3, 0], scale: [0.8, 1.1, 0.8] }}
             transition={{ duration: 0.8, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-stark-cyan/30 blur-3xl pointer-events-none mix-blend-screen"
+            className="absolute inset-0 rounded-full bg-stark-cyan/20 blur-3xl pointer-events-none"
           />
         )}
       </div>
 
-      {/* System Status Label */}
-      <div className="mt-4 text-center z-20">
+      {/* Status label */}
+      <div className="mt-6 text-center z-20">
         <motion.div 
           animate={isActive ? { opacity: [0.6, 1, 0.6] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
-          className={`text-[16px] font-bold tracking-[0.6em] uppercase transition-all duration-500 ${isActive ? 'text-stark-cyan stark-glow' : 'text-stark-cyan/30'}`}
+          className={`text-sm font-bold tracking-[0.5em] uppercase transition-all duration-500 ${isActive ? 'text-stark-cyan stark-glow' : 'text-stark-cyan/30'}`}
         >
           {isActivating ? "Neural Wake Sequence..." : isActive ? "JARVIS: ONLINE" : "STARK PROTOCOL: STANDBY"}
         </motion.div>
@@ -138,7 +133,7 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-[12px] text-stark-cyan/20 tracking-[0.4em] mt-2"
+            className="text-[11px] text-stark-cyan/20 tracking-[0.3em] mt-2"
           >
             [ Click Core to Initialize ]
           </motion.div>

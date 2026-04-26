@@ -22,7 +22,6 @@ export default function JarvisHUD() {
   const [isActivating, setIsActivating] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("HUD");
 
-  // Force bodyActive to true for UI indicators if status says RUNNING
   const bodyActive = status?.body_status === "RUNNING";
 
   const fetchStatus = async () => {
@@ -30,16 +29,15 @@ export default function JarvisHUD() {
       const data = await getJarvisStatus();
       if (data) {
         setStatus(data);
-        console.log("System Status Updated:", data);
       }
-    } catch (err) {
-      console.error("Status check failed", err);
+    } catch {
+      // silent
     }
   };
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000); // Poll faster (5s)
+    const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -60,13 +58,13 @@ export default function JarvisHUD() {
       } else {
         setIsActivating(false);
       }
-    } catch (err) {
+    } catch {
       setIsActivating(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground relative overflow-hidden font-mono flex flex-col">
+    <main className="h-screen bg-background text-foreground relative overflow-hidden font-mono flex flex-col">
       {/* Background HUD Layers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="scanline" />
@@ -75,9 +73,9 @@ export default function JarvisHUD() {
       </div>
 
       {/* TOP NAVIGATION BAR */}
-      <nav className="relative z-30 p-8 flex justify-between items-center border-b border-white/5 backdrop-blur-sm">
+      <nav className="relative z-30 px-6 py-4 flex justify-between items-center border-b border-white/5 backdrop-blur-sm shrink-0">
         <div className="flex items-center gap-6">
-          <div className="text-stark-cyan text-xl font-black tracking-tighter">STARK INDUSTRIES</div>
+          <div className="text-stark-cyan text-lg font-black tracking-tighter">STARK INDUSTRIES</div>
           <div className="h-4 w-px bg-white/20" />
           <div className="flex gap-8">
             {(["HUD", "CHAT", "CORE"] as Tab[]).map((tab) => (
@@ -102,43 +100,45 @@ export default function JarvisHUD() {
         </div>
       </nav>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 relative z-10 p-8">
+      {/* MAIN CONTENT AREA — fills remaining space */}
+      <div className="flex-1 relative z-10 overflow-hidden">
         <AnimatePresence mode="wait">
+
+          {/* ========== HUD TAB ========== */}
           {activeTab === "HUD" && (
             <motion.div 
               key="hud"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="h-full relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-full grid grid-cols-[280px_1fr_280px] grid-rows-[1fr_auto] gap-4 p-6"
             >
-              {/* TOP LEFT: Node Matrix */}
-              <div className="absolute top-0 left-0">
+              {/* LEFT COLUMN — stacked panels */}
+              <div className="flex flex-col gap-4 z-20">
                 <NodeMap headActive={true} bodyActive={bodyActive} />
-              </div>
-
-              {/* TOP RIGHT: Hardware Monitor */}
-              <div className="absolute top-0 right-0">
-                <SystemStats bodyActive={bodyActive} />
-              </div>
-
-              {/* BOTTOM LEFT: Command Terminal */}
-              <div className="absolute bottom-0 left-0">
+                <div className="flex-1" />
                 <SystemLog bodyActive={bodyActive} isActivating={isActivating} />
               </div>
 
-              {/* CENTER: The Arc Reactor */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+              {/* CENTER — Arc Reactor */}
+              <div className="flex items-center justify-center z-10">
                 <ArcReactor 
                   isActive={bodyActive}
                   isActivating={isActivating}
                   onInitiate={handleStartBody}
                 />
               </div>
+
+              {/* RIGHT COLUMN — stats */}
+              <div className="flex flex-col gap-4 z-20">
+                <SystemStats bodyActive={bodyActive} />
+              </div>
+
+              {/* BOTTOM — spans all columns, invisible spacer for footer */}
             </motion.div>
           )}
 
+          {/* ========== CHAT TAB ========== */}
           {activeTab === "CHAT" && (
             <motion.div 
               key="chat"
@@ -151,6 +151,7 @@ export default function JarvisHUD() {
             </motion.div>
           )}
 
+          {/* ========== CORE TAB ========== */}
           {activeTab === "CORE" && (
             <motion.div 
               key="core"
@@ -165,13 +166,12 @@ export default function JarvisHUD() {
       </div>
 
       {/* FOOTER METRICS */}
-      <footer className="relative z-30 p-6 flex justify-between items-end border-t border-white/5 opacity-40">
-        <div className="text-[8px] uppercase tracking-[1em]">
-          Neural Link: v4.2 // Sub-Node Asia-South-1a
+      <footer className="relative z-30 px-6 py-3 flex justify-between items-center border-t border-white/5 opacity-40 shrink-0">
+        <div className="text-[8px] uppercase tracking-[0.5em]">
+          Neural Link: v4.2 {"//"}  Sub-Node Asia-South-1a
         </div>
         <div className="text-[8px] uppercase tracking-[0.5em] text-right">
-          Jarvis OS // {status?.systems_nominal ? "Nominal" : "Stabilizing"}<br />
-          Encryption Active: RSA-4096
+          Jarvis OS {"//"}  {status?.systems_nominal ? "Nominal" : "Stabilizing"} {"//"}  RSA-4096
         </div>
       </footer>
     </main>

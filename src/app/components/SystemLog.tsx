@@ -23,12 +23,12 @@ export function SystemLog({ bodyActive, isActivating }: SystemLogProps) {
   }
 
   return (
-    <div className="w-80 stark-border bg-background/50 rounded-lg p-4 backdrop-blur-md h-48 overflow-hidden flex flex-col">
+    <div className="w-full stark-border bg-background/60 rounded-lg p-4 backdrop-blur-md overflow-hidden flex flex-col" style={{ maxHeight: "200px" }}>
       <div className="text-[10px] text-stark-cyan/60 uppercase tracking-widest mb-3 border-b border-white/5 pb-2">
         Command Terminal
       </div>
       
-      <div className="flex-1 font-mono text-[8px] space-y-1.5 overflow-y-auto scrollbar-hide">
+      <div className="flex-1 font-mono text-[8px] space-y-1.5 overflow-y-auto">
         {logs.map((log, i) => (
           <motion.div 
             key={i}
@@ -37,9 +37,9 @@ export function SystemLog({ bodyActive, isActivating }: SystemLogProps) {
             transition={{ delay: i * 0.1 }}
             className="flex gap-2"
           >
-            <span className="text-white/20">[{log.time}]</span>
-            <span className="text-stark-cyan/80 flex-1">{log.msg}</span>
-            <span className={`font-bold ${log.status === "OK" || log.status === "ONLINE" || log.status === "STABLE" ? "text-stark-cyan" : "text-stark-red"}`}>
+            <span className="text-white/20 shrink-0">[{log.time}]</span>
+            <span className="text-stark-cyan/80 flex-1 truncate">{log.msg}</span>
+            <span className={`font-bold shrink-0 ${log.status === "OK" || log.status === "ONLINE" || log.status === "STABLE" ? "text-stark-cyan" : "text-stark-red"}`}>
               {log.status}
             </span>
           </motion.div>
