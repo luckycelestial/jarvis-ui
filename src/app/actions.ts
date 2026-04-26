@@ -6,35 +6,14 @@ const BODY_DOMAIN = process.env.BODY_DOMAIN || "economic-examined-ridge-muslim.t
 
 export async function getJarvisStatus() {
   const HEAD_URL = `https://${HEAD_DOMAIN}/status`;
-  const BODY_PING_URL = `https://${BODY_DOMAIN}/status`;
 
   try {
-    // 1. Check Head's view of VM status
-    const headRes = await fetch(HEAD_URL, { 
+    const res = await fetch(HEAD_URL, { 
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store'
     });
-    const headData = headRes.ok ? await headRes.json() : null;
-
-    // 2. Perform direct heartbeat ping to Body node
-    let liveBodyStatus = false;
-    try {
-      const bodyPing = await fetch(BODY_PING_URL, {
-        headers: { "X-API-KEY": JARVIS_SECRET },
-        cache: 'no-store',
-        signal: AbortSignal.timeout(3000) // 3s timeout for snappy HUD
-      });
-      if (bodyPing.ok) liveBodyStatus = true;
-    } catch (e) {
-      liveBodyStatus = false;
-    }
-
-    return {
-      head_status: headData?.head_status || "OFFLINE",
-      body_status: liveBodyStatus ? "RUNNING" : (headData?.body_status || "OFFLINE"),
-      systems_nominal: !!(headData?.systems_nominal && liveBodyStatus),
-      body_live: liveBodyStatus
-    };
+    if (!res.ok) throw new Error("Gateway error");
+    return await res.json();
   } catch (error) {
     console.error("Status fetch failed:", error);
     return null;
