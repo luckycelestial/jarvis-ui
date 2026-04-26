@@ -23,13 +23,15 @@ import {
   ExternalLink,
   Maximize2,
   Minimize2,
-  PanelTopClose
+  PanelTopClose,
+  Server
 } from "lucide-react";
-import { getJarvisStatus, startBrain, chatWithJarvis, runVMScript } from "./actions";
+import { getJarvisStatus, startBody, chatWithJarvis, runVMScript } from "./actions";
+import { ArcReactor } from "./components/ArcReactor";
 
 // --- Types ---
 interface SystemStatus {
-  brain_status: string;
+  body_status: string;
   head_status: string;
   systems_nominal: boolean;
 }
@@ -104,25 +106,25 @@ export default function JarvisHUD() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStartBrain = async () => {
+  const handleStartBody = async () => {
     setIsActivating(true);
-    addLog("Initiating Brain activation sequence...", "action");
+    addLog("Initiating Body activation sequence...", "action");
     
     try {
-      const success = await startBrain();
+      const success = await startBody();
       if (success) {
         addLog("Activation command received. Warming up cores...", "info");
         let pings = 0;
         const poll = setInterval(async () => {
           await fetchStatus();
           pings++;
-          if (pings > 12 || status?.brain_status === "RUNNING") {
+          if (pings > 12 || status?.body_status === "RUNNING") {
             clearInterval(poll);
             setIsActivating(false);
           }
         }, 5000);
       } else {
-        addLog("Brain activation protocol failed.", "error");
+        addLog("Body activation protocol failed.", "error");
         setIsActivating(false);
       }
     } catch (err) {
@@ -221,13 +223,13 @@ export default function JarvisHUD() {
 
   const handleRunVMScript = async () => {
     setIsRunningScript(true);
-    addLog("Transmitting script execution request to Brain...", "action");
+    addLog("Transmitting script execution request to Body...", "action");
     try {
       const result = await runVMScript();
       if (result.success) {
-        addLog("Brain: Script executed successfully.", "info");
+        addLog("Body: Script executed successfully.", "info");
       } else {
-        addLog(`Brain: Script execution failed - ${ result.error } `, "error");
+        addLog(`Body: Script execution failed - ${ result.error } `, "error");
       }
     } catch (err) {
       addLog("Neural link timeout during script execution.", "error");
@@ -289,12 +291,12 @@ export default function JarvisHUD() {
             active={status?.head_status === "RUNNING"}
           />
           <StatusCard 
-            title="Aristotle Brain" 
-            status={status?.brain_status || "UNREACHABLE"} 
-            icon={<Brain className="text-stark-cyan" />}
+            title="Jarvis Body" 
+            status={status?.body_status || "UNREACHABLE"} 
+            icon={<Server className="text-stark-cyan" />}
             ip="34.93.105.44"
-            active={status?.brain_status === "RUNNING"}
-            warning={status?.brain_status === "TERMINATED"}
+            active={status?.body_status === "RUNNING"}
+            warning={status?.body_status === "TERMINATED"}
           />
           
           <div className="stark-border bg-black/40 backdrop-blur-md p-4 space-y-4">
@@ -323,7 +325,7 @@ export default function JarvisHUD() {
 
           <button
             onClick={handleRunVMScript}
-            disabled={isRunningScript || status?.brain_status !== "RUNNING"}
+            disabled={isRunningScript || status?.body_status !== "RUNNING"}
             className={`w - full py - 3 stark - border bg - stark - cyan / 5 flex items - center justify - center gap - 3 transition - all ${ isRunningScript ? "animate-pulse" : "hover:bg-stark-cyan/10" } `}
           >
             <Terminal size={16} className="text-stark-cyan" />
@@ -335,36 +337,11 @@ export default function JarvisHUD() {
 
         {/* Center: Arc Reactor & Primary Action (Col 4-7) */}
         <div className="lg:col-span-4 flex flex-col items-center justify-center relative">
-          <div className="relative group">
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-12 border border-dashed border-stark-cyan/20 rounded-full"
-            />
-            <motion.div 
-              animate={{ rotate: -360 }}
-              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-              className="absolute -inset-16 border border-stark-cyan/10 rounded-full"
-            />
-            
-            <button
-              onClick={handleStartBrain}
-              disabled={isActivating || status?.brain_status === "RUNNING"}
-              className={`
-                relative w - 40 h - 40 md: w - 56 md: h - 56 rounded - full flex flex - col items - center justify - center gap - 2
-transition - all duration - 500 stark - border z - 10
-                ${ status?.brain_status === "RUNNING" ? "bg-stark-cyan/15 border-stark-cyan/60" : "bg-stark-cyan/5 border-stark-cyan/30 hover:bg-stark-cyan/10" }
-                ${ isActivating ? "animate-pulse" : "" }
-`}
-            >
-              <Power size={48} className={status?.brain_status === "RUNNING" ? "text-stark-cyan stark-glow" : "text-stark-cyan/40"} />
-              <span className="text-[10px] font-bold tracking-[0.2em] text-stark-cyan/80">
-                {isActivating ? "WAKING CORE..." : status?.brain_status === "RUNNING" ? "CORE ACTIVE" : "INITIATE BRAIN"}
-              </span>
-              
-              <div className={`absolute inset - 4 rounded - full border border - stark - cyan / 10 ${ status?.brain_status === "RUNNING" ? "animate-pulse-cyan" : "" } `} />
-            </button>
-          </div>
+          <ArcReactor 
+            isActive={status?.body_status === "RUNNING"}
+            isActivating={isActivating}
+            onInitiate={handleStartBody}
+          />
         </div>
 
         {/* Right Section: Chat Interface (Col 8-12) */}

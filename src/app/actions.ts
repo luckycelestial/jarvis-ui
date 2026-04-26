@@ -2,7 +2,7 @@
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
 const HEAD_IP = process.env.HEAD_IP || "34.69.30.127";
-const BRAIN_IP = process.env.BRAIN_IP || "34.93.105.44";
+const BODY_IP = process.env.BODY_IP || "34.93.105.44";
 
 export async function getJarvisStatus() {
   const HEAD_URL = `http://${HEAD_IP}:8000/status`;
@@ -21,8 +21,8 @@ export async function getJarvisStatus() {
   }
 }
 
-export async function startBrain() {
-  const HEAD_URL = `http://${HEAD_IP}:8000/start_brain`;
+export async function startBody() {
+  const HEAD_URL = `http://${HEAD_IP}:8000/start_body`;
 
   try {
     const res = await fetch(HEAD_URL, { 
@@ -32,16 +32,16 @@ export async function startBrain() {
     });
     return res.ok;
   } catch (error) {
-    console.error("Brain activation failed:", error);
+    console.error("Body activation failed:", error);
     return false;
   }
 }
 
 export async function chatWithJarvis(prompt: string) {
-  const BRAIN_URL = `http://${BRAIN_IP}:8001/query`;
+  const BODY_URL = `http://${BODY_IP}:8001/query`;
 
   try {
-    const res = await fetch(BRAIN_URL, {
+    const res = await fetch(BODY_URL, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -58,10 +58,10 @@ export async function chatWithJarvis(prompt: string) {
 }
 
 export async function runVMScript() {
-  const BRAIN_URL = `http://${BRAIN_IP}:8001/run_script`;
+  const BODY_URL = `http://${BODY_IP}:8001/run_script`;
 
   try {
-    const res = await fetch(BRAIN_URL, {
+    const res = await fetch(BODY_URL, {
       method: "POST",
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store'
