@@ -27,9 +27,7 @@ export default function JarvisHUD() {
   const fetchStatus = async () => {
     try {
       const data = await getJarvisStatus();
-      if (data) {
-        setStatus(data);
-      }
+      if (data) setStatus(data);
     } catch {
       // silent
     }
@@ -72,8 +70,8 @@ export default function JarvisHUD() {
         <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#22d3ee_1px,transparent_1px),linear-gradient(to_bottom,#22d3ee_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
 
-      {/* TOP NAVIGATION BAR */}
-      <nav className="relative z-30 px-6 py-4 flex justify-between items-center border-b border-white/5 backdrop-blur-sm shrink-0">
+      {/* TOP NAVIGATION BAR — z-40 so it floats above the reactor */}
+      <nav className="relative z-40 px-6 py-4 flex justify-between items-center border-b border-white/5 backdrop-blur-md bg-background/60 shrink-0">
         <div className="flex items-center gap-6">
           <div className="text-stark-cyan text-lg font-black tracking-tighter">STARK INDUSTRIES</div>
           <div className="h-4 w-px bg-white/20" />
@@ -100,7 +98,7 @@ export default function JarvisHUD() {
         </div>
       </nav>
 
-      {/* MAIN CONTENT AREA — fills remaining space */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 relative z-10 overflow-hidden">
         <AnimatePresence mode="wait">
 
@@ -111,17 +109,10 @@ export default function JarvisHUD() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="h-full grid grid-cols-[320px_1fr_320px] grid-rows-[1fr] gap-6 p-6"
+              className="absolute inset-0"
             >
-              {/* LEFT COLUMN — stacked panels */}
-              <div className="flex flex-col gap-4 z-20">
-                <NodeMap headActive={true} bodyActive={bodyActive} />
-                <div className="flex-1" />
-                <SystemLog bodyActive={bodyActive} isActivating={isActivating} />
-              </div>
-
-              {/* CENTER — Arc Reactor */}
-              <div className="flex items-center justify-center z-10">
+              {/* Arc Reactor — full viewport height, centered, goes behind navbar */}
+              <div className="absolute inset-0 flex items-center justify-center z-10" style={{ top: "-48px" }}>
                 <ArcReactor 
                   isActive={bodyActive}
                   isActivating={isActivating}
@@ -129,12 +120,16 @@ export default function JarvisHUD() {
                 />
               </div>
 
-              {/* RIGHT COLUMN — stats */}
-              <div className="flex flex-col gap-4 z-20">
-                <SystemStats bodyActive={bodyActive} />
+              {/* LEFT PANELS — float over the reactor */}
+              <div className="absolute top-4 left-4 w-[300px] flex flex-col gap-4 z-20">
+                <NodeMap headActive={true} bodyActive={bodyActive} />
+                <SystemLog bodyActive={bodyActive} isActivating={isActivating} />
               </div>
 
-              {/* BOTTOM — spans all columns, invisible spacer for footer */}
+              {/* RIGHT PANEL — float over the reactor */}
+              <div className="absolute top-4 right-4 w-[300px] z-20">
+                <SystemStats bodyActive={bodyActive} />
+              </div>
             </motion.div>
           )}
 
@@ -165,8 +160,8 @@ export default function JarvisHUD() {
         </AnimatePresence>
       </div>
 
-      {/* FOOTER METRICS */}
-      <footer className="relative z-30 px-6 py-3 flex justify-between items-center border-t border-white/5 opacity-40 shrink-0">
+      {/* FOOTER */}
+      <footer className="relative z-40 px-6 py-3 flex justify-between items-center border-t border-white/5 bg-background/60 backdrop-blur-md opacity-60 shrink-0">
         <div className="text-[8px] uppercase tracking-[0.5em]">
           Neural Link: v4.2 {"//"}  Sub-Node Asia-South-1a
         </div>

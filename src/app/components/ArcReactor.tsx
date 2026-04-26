@@ -11,6 +11,8 @@ interface ArcReactorProps {
 
 const TOTAL_FRAMES = 192;
 const FRAME_PATH = "/frames/arc-reactor/frame-";
+const FRAME_W = 800;
+const FRAME_H = 1422;
 
 export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,11 +21,9 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
   const requestRef = useRef<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Preload all frames once
   useEffect(() => {
     let loadedCount = 0;
     const frames: HTMLImageElement[] = [];
-
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image();
       img.src = `${FRAME_PATH}${String(i).padStart(4, "0")}.webp`;
@@ -37,13 +37,11 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
     return () => cancelAnimationFrame(requestRef.current);
   }, []);
 
-  // Animation loop — uses ref for frame index to avoid re-renders
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isLoaded) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const img = framesRef.current[frameIndexRef.current];
     if (img && img.complete) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -73,7 +71,7 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
 
   return (
     <div 
-      className="relative cursor-pointer flex flex-col items-center justify-center w-full h-full" 
+      className="relative cursor-pointer flex flex-col items-center justify-center h-full" 
       onClick={!isActive && !isActivating ? onInitiate : undefined}
     >
       {/* Decorative rings */}
@@ -90,29 +88,21 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
         />
       </div>
 
-      {/* 
-        The canvas container uses mix-blend-mode: screen on the WRAPPER.
-        This makes all black pixels in the WebP frames transparent 
-        against the dark background, removing the "black box".
-      */}
+      {/* Canvas — full height, 9:16 portrait, black removed via blend */}
       <div 
-        className={`
-          relative w-full max-w-[90%] aspect-square transition-all duration-700
-          ${isActive ? 'drop-shadow-[0_0_80px_rgba(34,211,238,0.4)]' : ''}
-          ${isActivating ? 'drop-shadow-[0_0_80px_rgba(34,211,238,0.6)]' : ''}
-        `}
+        className="relative h-full flex items-center justify-center"
         style={{ mixBlendMode: "screen" }}
       >
         <canvas
           ref={canvasRef}
-          width={500}
-          height={500}
-          className="w-full h-full"
+          width={FRAME_W}
+          height={FRAME_H}
+          className="h-full w-auto object-contain"
         />
       </div>
 
-      {/* Status text */}
-      <div className="mt-4 text-center z-20">
+      {/* Status text — positioned at bottom center */}
+      <div className="absolute bottom-6 left-0 right-0 text-center z-20">
         <motion.div 
           animate={isActive ? { opacity: [0.6, 1, 0.6] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
@@ -120,7 +110,6 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
         >
           {isActivating ? "Neural Wake Sequence..." : isActive ? "JARVIS: ONLINE" : "STARK PROTOCOL: STANDBY"}
         </motion.div>
-        
         {!isActive && !isActivating && (
           <div className="text-[11px] text-stark-cyan/20 tracking-[0.3em] mt-2">
             [ Click Core to Initialize ]
