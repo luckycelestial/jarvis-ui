@@ -79,7 +79,7 @@ export default function JarvisHUD() {
       
       {/* Meta info */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 opacity-10 text-[8px] uppercase tracking-[1em] text-stark-cyan pointer-events-none">
-        Stark Core Protocol // LOQ-HUD
+        Stark Core Protocol // JARVIS-HUD
       </div>
     </main>
   );
