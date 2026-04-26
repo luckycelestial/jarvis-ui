@@ -37,19 +37,48 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
     return () => cancelAnimationFrame(requestRef.current);
   }, []);
 
+  const directionRef = useRef<1 | -1>(1);
+
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isLoaded) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    
     const img = framesRef.current[frameIndexRef.current];
     if (img && img.complete) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     }
-    frameIndexRef.current = (frameIndexRef.current + 1) % TOTAL_FRAMES;
+    
+    // Animation logic
+    if (isActive) {
+      // Body is ON: Oscillate last 60 frames (~2 seconds at 30fps)
+      const OSCILLATE_START = Math.max(0, TOTAL_FRAMES - 60);
+      const OSCILLATE_END = TOTAL_FRAMES - 1;
+      
+      // If we're catching up to the oscillation zone, fast forward
+      if (frameIndexRef.current < OSCILLATE_START) {
+        frameIndexRef.current++;
+        directionRef.current = 1;
+      } else {
+        frameIndexRef.current += directionRef.current;
+        if (frameIndexRef.current >= OSCILLATE_END) {
+          frameIndexRef.current = OSCILLATE_END;
+          directionRef.current = -1;
+        } else if (frameIndexRef.current <= OSCILLATE_START) {
+          frameIndexRef.current = OSCILLATE_START;
+          directionRef.current = 1;
+        }
+      }
+    } else if (isActivating) {
+      // Activating: Play video forward, loop if needed
+      frameIndexRef.current = (frameIndexRef.current + 1) % TOTAL_FRAMES;
+      directionRef.current = 1;
+    }
+    
     requestRef.current = requestAnimationFrame(animate);
-  }, [isLoaded]);
+  }, [isLoaded, isActive, isActivating]);
 
   useEffect(() => {
     if ((isActive || isActivating) && isLoaded) {
@@ -59,11 +88,13 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
       const canvas = canvasRef.current;
       if (canvas && isLoaded) {
         const ctx = canvas.getContext("2d");
-        const img = framesRef.current[0];
+        const img = framesRef.current[0]; // First frame
         if (ctx && img && img.complete) {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
+        frameIndexRef.current = 0; // Reset to 0 when stopped
+        directionRef.current = 1;
       }
     }
     return () => cancelAnimationFrame(requestRef.current);

@@ -2,7 +2,7 @@
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
 const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
-const BODY_DOMAIN = process.env.BODY_DOMAIN || "economic-examined-ridge-muslim.trycloudflare.com";
+const BODY_DOMAIN = process.env.BODY_DOMAIN || "34.93.105.44:8001";
 
 export async function getJarvisStatus() {
   const cacheBuster = Date.now();
@@ -38,7 +38,7 @@ export async function startBody() {
 }
 
 export async function chatWithJarvis(prompt: string) {
-  const BODY_URL = `https://${BODY_DOMAIN}/query`;
+  const BODY_URL = `http://${BODY_DOMAIN}/query`;
 
   try {
     const res = await fetch(BODY_URL, {
@@ -58,7 +58,7 @@ export async function chatWithJarvis(prompt: string) {
 }
 
 export async function runVMScript() {
-  const BODY_URL = `https://${BODY_DOMAIN}/run_script`;
+  const BODY_URL = `http://${BODY_DOMAIN}/run_script`;
 
   try {
     const res = await fetch(BODY_URL, {
