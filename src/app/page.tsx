@@ -1,4 +1,4 @@
-`"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -77,7 +77,7 @@ export default function JarvisHUD() {
 
   const addLog = (msg: string, type: "info" | "error" | "action" = "info") => {
     const prefix = type === "error" ? "[ERROR]" : type === "action" ? "[ACTION]" : "[SYSTEM]";
-    setLogs(prev => [...prev.slice(-8), `${ prefix } ${ msg } `]);
+    setLogs(prev => [...prev.slice(-8), prefix + " " + msg]);
   };
 
   const fetchStatus = async () => {
@@ -146,9 +146,9 @@ export default function JarvisHUD() {
       body: JSON.stringify({ command, params })
     }).then(res => {
       if (res.ok) {
-        addLog(`Local Command: ${ command } success.`, "action");
+        addLog("Local Command: " + command + " success.", "action");
       } else {
-        addLog(`Local Command: ${ command } failed(Link active but rejected).`, "error");
+        addLog("Local Command: " + command + " failed(Link active but rejected).", "error");
       }
     }).catch(() => {
       addLog("Local Link Offline. Check INITIATE_JARVIS_LINK.bat.", "info");
@@ -190,10 +190,10 @@ export default function JarvisHUD() {
         const localOpenMatch = rawResponse.match(/\[(?:LOCAL_OPEN|OPEN_TABS):\s*(.*?)\]/);
         if (localOpenMatch) {
           const urlsStr = localOpenMatch[1];
-          const urls = urlsStr.split(",").map(u => u.trim()).filter(u => u.length > 0);
+          const urls = urlsStr.split(",").map((u: string) => u.trim()).filter((u: string) => u.length > 0);
           
           if (urls.length > 0) {
-            addLog(`Executing local tab protocol for ${urls.length} resources...`, "action");
+            addLog("Executing local tab protocol for " + urls.length + " resources...", "action");
             triggerLocalCommand("open_tabs", { urls });
             
             // Clean the response text for display (remove the command tag)
@@ -229,7 +229,7 @@ export default function JarvisHUD() {
       if (result.success) {
         addLog("Body: Script executed successfully.", "info");
       } else {
-        addLog(`Body: Script execution failed - ${ result.error } `, "error");
+        addLog("Body: Script execution failed - " + result.error, "error");
       }
     } catch (err) {
       addLog("Neural link timeout during script execution.", "error");
@@ -318,7 +318,7 @@ export default function JarvisHUD() {
                <Zap className={systemsNominal ? "text-stark-cyan" : "text-stark-red"} size={16} />
                <span className="text-[10px] text-stark-cyan/80">INTEGRITY</span>
              </div>
-             <span className={`text - [10px] font - bold ${ systemsNominal ? "text-stark-cyan stark-glow" : "text-stark-red animate-pulse" } `}>
+             <span className={"text-[10px] font-bold " + (systemsNominal ? "text-stark-cyan stark-glow" : "text-stark-red animate-pulse")}>
                {systemsNominal ? "NOMINAL" : "DEGRADED"}
              </span>
           </div>
@@ -326,7 +326,7 @@ export default function JarvisHUD() {
           <button
             onClick={handleRunVMScript}
             disabled={isRunningScript || status?.body_status !== "RUNNING"}
-            className={`w - full py - 3 stark - border bg - stark - cyan / 5 flex items - center justify - center gap - 3 transition - all ${ isRunningScript ? "animate-pulse" : "hover:bg-stark-cyan/10" } `}
+            className={"w-full py-3 stark-border bg-stark-cyan/5 flex items-center justify-center gap-3 transition-all " + (isRunningScript ? "animate-pulse" : "hover:bg-stark-cyan/10")}
           >
             <Terminal size={16} className="text-stark-cyan" />
             <span className="text-[10px] font-bold tracking-widest text-stark-cyan uppercase">
@@ -385,17 +385,10 @@ export default function JarvisHUD() {
                     key={msg.id}
                     initial={{ opacity: 0, y: 10, x: msg.role === "user" ? 10 : -10 }}
                     animate={{ opacity: 1, y: 0, x: 0 }}
-                    className={`flex ${ msg.role === "user" ? "justify-end" : "justify-start" } `}
+                    className={"flex " + (msg.role === "user" ? "justify-end" : "justify-start")}
                   >
-                    <div className={`max - w - [85 %] group relative`}>
-                      <div className={`
-text - [11px] p - 3 border leading - relaxed
-                        ${
-  msg.role === "user"
-  ? "bg-stark-cyan/10 border-stark-cyan/30 text-stark-cyan rounded-l-xl rounded-tr-xl"
-  : "bg-black/40 border-stark-cyan/10 text-stark-cyan/80 rounded-r-xl rounded-tl-xl"
-}
-`}>
+                    <div className="max-w-[85%] group relative">
+                      <div className={"text-[11px] p-3 border leading-relaxed " + (msg.role === "user" ? "bg-stark-cyan/10 border-stark-cyan/30 text-stark-cyan rounded-l-xl rounded-tr-xl" : "bg-black/40 border-stark-cyan/10 text-stark-cyan/80 rounded-r-xl rounded-tl-xl")}>
                         <div className="flex items-center gap-2 mb-1 opacity-40 text-[8px] font-bold uppercase">
                           {msg.role === "user" ? "Authorized User" : "JARVIS Intelligence"}
                           <span>•</span>
@@ -407,7 +400,7 @@ text - [11px] p - 3 border leading - relaxed
 
                       
                       {/* Message corner decoration */}
-                      <div className={`absolute top - 0 ${ msg.role === "user" ? "right-0 -mr-1" : "left-0 -ml-1" } w - 2 h - 2 border - t border - stark - cyan / 40`} />
+                      <div className={"absolute top-0 " + (msg.role === "user" ? "right-0 -mr-1" : "left-0 -ml-1") + " w-2 h-2 border-t border-stark-cyan/40"} />
                     </div>
                   </motion.div>
                 ))}
@@ -478,11 +471,11 @@ function StatusCard({ title, status, icon, ip, active, warning }: any) {
   return (
     <motion.div 
       whileHover={{ scale: 1.02 }}
-      className={`stark - border bg - black / 40 backdrop - blur - md p - 4 relative overflow - hidden transition - all ${ active ? "border-stark-cyan/40 bg-stark-cyan/5" : "border-stark-cyan/10" } `}
+      className={"stark-border bg-black/40 backdrop-blur-md p-4 relative overflow-hidden transition-all " + (active ? "border-stark-cyan/40 bg-stark-cyan/5" : "border-stark-cyan/10")}
     >
       <div className="flex items-start justify-between">
         <div className="flex gap-3">
-          <div className={`p - 2 rounded - lg bg - stark - cyan / 10 ${ active ? "animate-pulse" : "" } `}>
+          <div className={"p-2 rounded-lg bg-stark-cyan/10 " + (active ? "animate-pulse" : "")}>
             {React.cloneElement(icon as React.ReactElement<any>, { size: 18 })}
           </div>
           <div>
@@ -491,19 +484,14 @@ function StatusCard({ title, status, icon, ip, active, warning }: any) {
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <div className={`text - [8px] font - bold px - 2 py - 0.5 rounded border ${
-  active ? "text-stark-cyan border-stark-cyan/40 bg-stark-cyan/10 stark-glow" :
-    warning ? "text-stark-red border-stark-red/40 bg-stark-red/10" :
-      "text-stark-cyan/20 border-stark-cyan/10"
-} `}>
+          <div className={"text-[8px] font-bold px-2 py-0.5 rounded border " + (active ? "text-stark-cyan border-stark-cyan/40 bg-stark-cyan/10 stark-glow" : warning ? "text-stark-red border-stark-red/40 bg-stark-red/10" : "text-stark-cyan/20 border-stark-cyan/10")}>
             {status}
           </div>
         </div>
       </div>
       
       {/* Background Decorative Line */}
-      <div className={`absolute bottom - 0 left - 0 h - [1px] bg - stark - cyan / 30 transition - all duration - 1000 ${ active ? "w-full" : "w-0" } `} />
+      <div className={"absolute bottom-0 left-0 h-[1px] bg-stark-cyan/30 transition-all duration-1000 " + (active ? "w-full" : "w-0")} />
     </motion.div>
   );
 }
-`

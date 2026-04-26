@@ -8,8 +8,8 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JARVIS // Stark Industries",
-  description: "Next-Gen AI Interface Protocol",
+  title: "LOQ // Stark Industries",
+  description: "Next-Gen AI Interface Protocol | Contact: pavithran.poona@gmail.com",
 };
 
 export default function RootLayout({
