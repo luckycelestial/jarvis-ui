@@ -2,7 +2,7 @@
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
 const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
-const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
+const BODY_DOMAIN = process.env.BODY_DOMAIN || "economic-examined-ridge-muslim.trycloudflare.com";
 
 export async function getJarvisStatus() {
   const HEAD_URL = `https://${HEAD_DOMAIN}/status`;
