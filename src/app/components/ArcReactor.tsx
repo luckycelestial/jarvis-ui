@@ -51,6 +51,7 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
 
     const img = framesRef.current[currentFrame - 1];
     if (img && img.complete) {
+      // CLEAR IS CRITICAL TO REMOVE THE "BLACK BOX"
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     }
@@ -83,46 +84,48 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
 
   return (
     <div 
-      className="relative group cursor-pointer flex flex-col items-center justify-center" 
+      className="relative group cursor-pointer flex flex-col items-center justify-center w-full h-full" 
       onClick={!isActive && !isActivating ? onInitiate : undefined}
     >
       {/* HUD Rings - Dynamic Aura */}
-      <motion.div 
-        animate={{ rotate: 360, scale: isActive ? 1.2 : 1 }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-        className="absolute w-[100vh] h-[100vh] border border-stark-cyan/10 rounded-full pointer-events-none"
-      />
-      <motion.div 
-        animate={{ rotate: -360, scale: isActive ? 1.15 : 1 }}
-        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-        className="absolute w-[90vh] h-[90vh] border border-stark-cyan/5 rounded-full pointer-events-none border-dashed"
-      />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <motion.div 
+          animate={{ rotate: 360, scale: isActive ? 1.2 : 1 }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[80vh] h-[80vh] border border-stark-cyan/10 rounded-full"
+        />
+        <motion.div 
+          animate={{ rotate: -360, scale: isActive ? 1.15 : 1 }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+          className="absolute w-[70vh] h-[70vh] border border-stark-cyan/5 rounded-full border-dashed"
+        />
+      </div>
 
-      {/* Main Reactor Canvas - Sized to match native resolution */}
+      {/* Main Reactor Canvas - Responsive but Sized to native 500px max */}
       <div className={`
-        relative w-[500px] h-[500px] transition-all duration-1000 ease-in-out
-        ${isActive ? 'opacity-100 scale-110 drop-shadow-[0_0_40px_rgba(34,211,238,0.5)]' : 'opacity-60 scale-100'}
+        relative w-full max-w-[500px] aspect-square transition-all duration-1000 ease-in-out z-10
+        ${isActive ? 'opacity-100 scale-110 drop-shadow-[0_0_50px_rgba(34,211,238,0.6)]' : 'opacity-80 scale-100'}
         ${isActivating ? 'brightness-150' : ''}
       `}>
         <canvas
           ref={canvasRef}
           width={500}
           height={500}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain mix-blend-screen"
         />
         
         {/* Core Status Pulse Overlays */}
         {isActivating && (
           <motion.div 
-            animate={{ opacity: [0, 0.6, 0], scale: [0.9, 1.2, 0.9] }}
+            animate={{ opacity: [0, 0.4, 0], scale: [0.8, 1.2, 0.8] }}
             transition={{ duration: 0.8, repeat: Infinity }}
-            className="absolute inset-0 rounded-full bg-stark-cyan/20 blur-2xl pointer-events-none mix-blend-screen"
+            className="absolute inset-0 rounded-full bg-stark-cyan/30 blur-3xl pointer-events-none mix-blend-screen"
           />
         )}
       </div>
 
       {/* System Status Label */}
-      <div className="mt-8 text-center">
+      <div className="mt-4 text-center z-20">
         <motion.div 
           animate={isActive ? { opacity: [0.6, 1, 0.6] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
@@ -135,7 +138,7 @@ export function ArcReactor({ isActive, isActivating, onInitiate }: ArcReactorPro
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-[12px] text-stark-cyan/20 tracking-[0.4em] mt-3"
+            className="text-[12px] text-stark-cyan/20 tracking-[0.4em] mt-2"
           >
             [ Click Core to Initialize ]
           </motion.div>
