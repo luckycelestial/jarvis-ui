@@ -111,7 +111,7 @@ export default function JarvisHUD() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="h-full grid grid-cols-[280px_1fr_280px] grid-rows-[1fr_auto] gap-4 p-6"
+              className="h-full grid grid-cols-[320px_1fr_320px] grid-rows-[1fr] gap-6 p-6"
             >
               {/* LEFT COLUMN — stacked panels */}
               <div className="flex flex-col gap-4 z-20">
