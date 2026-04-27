@@ -47,9 +47,18 @@ export default function JarvisHUD() {
       if (success) {
         let attempts = 0;
         const poll = setInterval(async () => {
-          await fetchStatus();
+          const data = await getJarvisStatus();
           attempts++;
-          if (attempts > 20 || status?.body_status === "RUNNING") {
+          
+          if (data) {
+            setStatus(data);
+            if (data.body_status === "RUNNING") {
+              clearInterval(poll);
+              setIsActivating(false);
+            }
+          }
+          
+          if (attempts > 30) {
             clearInterval(poll);
             setIsActivating(false);
           }
@@ -91,6 +100,11 @@ export default function JarvisHUD() {
         
         <div className="flex items-center gap-4 text-[10px] tracking-widest text-stark-cyan/60">
           <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${status?.head_status === "RUNNING" ? 'bg-stark-cyan shadow-[0_0_10px_#22d3ee]' : 'bg-stark-red'}`} />
+            HEAD_NODE_{status?.head_status === "RUNNING" ? 'ONLINE' : 'OFFLINE'}
+          </div>
+          <div className="h-2 w-px bg-white/10" />
+          <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${bodyActive ? 'bg-stark-cyan animate-pulse shadow-[0_0_10px_#22d3ee]' : 'bg-stark-red'}`} />
             BODY_NODE_{bodyActive ? 'ONLINE' : 'OFFLINE'}
           </div>
@@ -123,7 +137,7 @@ export default function JarvisHUD() {
 
               {/* LEFT PANELS — wider, floating over reactor */}
               <div className="absolute top-4 left-4 w-[340px] flex flex-col gap-4 z-20">
-                <NodeMap headActive={true} bodyActive={bodyActive} />
+                <NodeMap headActive={status?.head_status === "RUNNING"} bodyActive={bodyActive} />
                 <SystemLog bodyActive={bodyActive} isActivating={isActivating} />
               </div>
 
@@ -156,7 +170,7 @@ export default function JarvisHUD() {
               exit={{ opacity: 0 }}
               className="h-full"
             >
-              <CoreDashboard />
+              <CoreDashboard status={status} />
             </motion.div>
           )}
         </AnimatePresence>

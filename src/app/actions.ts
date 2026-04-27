@@ -16,22 +16,28 @@ export async function getJarvisStatus() {
   try {
     const res = await fetch(HEAD_URL, { 
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000)
     });
-    if (res.ok) headData = await res.json();
+    if (res.ok) {
+      headData = await res.json();
+    } else {
+      console.warn(`Head Gateway returned status: ${res.status}`);
+    }
   } catch (error) {
-    console.error("Head status fetch failed:", error);
+    console.error("Head status fetch failed (unreachable):", HEAD_DOMAIN);
   }
 
   // Ping Body directly from Vercel
   try {
     const res = await fetch(BODY_URL, { 
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000)
     });
     if (res.ok) bodyLive = true;
   } catch (error) {
-    console.error("Body status fetch failed:", error);
+    // console.log("Body node not yet reachable via public tunnel.");
   }
 
   // If Head couldn't reach Body but Vercel can, override the status!
@@ -50,7 +56,8 @@ export async function getJarvisStatus() {
     body_status: bodyLive ? "RUNNING" : "OFFLINE",
     systems_nominal: bodyLive,
     body_live: bodyLive,
-    vm_state: bodyLive ? "RUNNING" : "OFFLINE"
+    vm_state: bodyLive ? "RUNNING" : "OFFLINE",
+    last_updated: new Date().toISOString()
   };
 }
 

@@ -77,14 +77,34 @@ function IntegrationCard({ integration, index }: { integration: Integration; ind
   );
 }
 
-export function CoreDashboard() {
-  const categories = [...new Set(INTEGRATIONS.map(i => i.category))];
+interface CoreDashboardProps {
+  status: any;
+}
+
+export function CoreDashboard({ status }: CoreDashboardProps) {
+  const bodyActive = status?.body_status === "RUNNING";
+  const headActive = status?.head_status === "RUNNING" || status?.head_status === "ONLINE";
+
+  const dynamicIntegrations = INTEGRATIONS.map(integration => {
+    if (integration.name === "Head Node") {
+      return { ...integration, status: headActive ? "online" : "offline" as const };
+    }
+    if (integration.name === "Body Node") {
+      return { ...integration, status: bodyActive ? "online" : "standby" as const };
+    }
+    if (integration.category === "AI Models") {
+      return { ...integration, status: bodyActive ? "online" : "standby" as const };
+    }
+    return integration;
+  });
+
+  const categories = [...new Set(dynamicIntegrations.map(i => i.category))];
   
   const counts = {
-    online: INTEGRATIONS.filter(i => i.status === "online").length,
-    standby: INTEGRATIONS.filter(i => i.status === "standby").length,
-    offline: INTEGRATIONS.filter(i => i.status === "offline").length,
-    degraded: INTEGRATIONS.filter(i => i.status === "degraded").length,
+    online: dynamicIntegrations.filter(i => i.status === "online").length,
+    standby: dynamicIntegrations.filter(i => i.status === "standby").length,
+    offline: dynamicIntegrations.filter(i => i.status === "offline").length,
+    degraded: dynamicIntegrations.filter(i => i.status === "degraded").length,
   };
 
   return (
@@ -93,7 +113,7 @@ export function CoreDashboard() {
       <div className="shrink-0 px-6 py-4 border-b border-white/5 flex items-center justify-between">
         <div>
           <div className="text-[11px] text-stark-cyan/60 uppercase tracking-[0.5em] mb-1">Neural Engine Core</div>
-          <div className="text-[8px] text-white/20 tracking-widest">Integration Health Monitor — {INTEGRATIONS.length} subsystems tracked</div>
+          <div className="text-[8px] text-white/20 tracking-widest">Integration Health Monitor — {dynamicIntegrations.length} subsystems tracked</div>
         </div>
         <div className="flex gap-6">
           <div className="text-center">
@@ -125,11 +145,11 @@ export function CoreDashboard() {
               <div className="text-[9px] text-stark-cyan/40 uppercase tracking-[0.5em] font-bold">{category}</div>
               <div className="flex-1 h-px bg-white/5" />
               <div className="text-[8px] text-white/15">
-                {INTEGRATIONS.filter(i => i.category === category).length} subsystems
+                {dynamicIntegrations.filter(i => i.category === category).length} subsystems
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {INTEGRATIONS.filter(i => i.category === category).map((integration, idx) => (
+              {dynamicIntegrations.filter(i => i.category === category).map((integration, idx) => (
                 <IntegrationCard key={integration.name} integration={integration} index={idx} />
               ))}
             </div>
