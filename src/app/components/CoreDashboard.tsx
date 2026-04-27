@@ -85,15 +85,15 @@ export function CoreDashboard({ status }: CoreDashboardProps) {
   const bodyActive = status?.body_status === "RUNNING";
   const headActive = status?.head_status === "RUNNING" || status?.head_status === "ONLINE";
 
-  const dynamicIntegrations = INTEGRATIONS.map(integration => {
+  const dynamicIntegrations: Integration[] = INTEGRATIONS.map(integration => {
     if (integration.name === "Head Node") {
-      return { ...integration, status: headActive ? "online" : "offline" as const };
+      return { ...integration, status: headActive ? "online" : "offline" };
     }
     if (integration.name === "Body Node") {
-      return { ...integration, status: bodyActive ? "online" : "standby" as const };
+      return { ...integration, status: bodyActive ? "online" : "standby" };
     }
     if (integration.category === "AI Models") {
-      return { ...integration, status: bodyActive ? "online" : "standby" as const };
+      return { ...integration, status: bodyActive ? "online" : "standby" };
     }
     return integration;
   });
