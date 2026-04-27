@@ -66,7 +66,7 @@ export function SystemStats({ bodyActive }: { bodyActive: boolean }) {
         </div>
         <div className="flex justify-between text-[8px] text-white/25 uppercase tracking-wider">
           <span>Active Model</span>
-          <span className="text-stark-cyan/40">{bodyActive ? "Gemini 2.5 Pro" : "---"}</span>
+          <span className="text-stark-cyan/40">{bodyActive ? "Gemini 2.5 Flash" : "---"}</span>
         </div>
         <div className="flex justify-between text-[8px] text-white/25 uppercase tracking-wider">
           <span>Context Window</span>

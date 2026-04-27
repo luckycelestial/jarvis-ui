@@ -20,9 +20,8 @@ const INTEGRATIONS: Integration[] = [
   { name: "Vercel Edge", category: "Infrastructure", status: "online", description: "UI hosting with global CDN and serverless functions", endpoint: "jarvis-ui-weld.vercel.app" },
 
   // AI & Models
-  { name: "Gemini 2.5 Pro", category: "AI Models", status: "standby", description: "Primary reasoning model for complex queries", version: "2.5-pro" },
-  { name: "Gemini 2.5 Flash", category: "AI Models", status: "standby", description: "Fast model for real-time responses", version: "2.5-flash" },
-  { name: "Embedding Model", category: "AI Models", status: "offline", description: "Vector embeddings for semantic search", version: "text-embedding-004" },
+  { name: "Gemini 2.5 Flash", category: "AI Models", status: "standby", description: "Primary model for real-time responses", version: "2.5-flash" },
+  { name: "Embedding Model", category: "AI Models", status: "offline", description: "Vector embeddings for semantic search", version: "gemini-embedding-001" },
 
   // APIs & Services
   { name: "Google Search API", category: "APIs", status: "standby", description: "Web search for real-time information retrieval" },
