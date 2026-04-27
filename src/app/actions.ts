@@ -3,6 +3,7 @@
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
 const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
 const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
+const STATUS_TIMEOUT_MS = 12000;
 
 export async function getJarvisStatus() {
   const cacheBuster = Date.now();
@@ -15,7 +16,7 @@ export async function getJarvisStatus() {
     const res = await fetch(HEAD_URL, { 
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store',
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(STATUS_TIMEOUT_MS)
     });
     if (res.ok) {
       headData = await res.json();
@@ -33,15 +34,8 @@ export async function getJarvisStatus() {
     return headData;
   }
 
-  // Fallback if Head is completely unreachable
-  return {
-    head_status: "OFFLINE",
-    body_status: "OFFLINE",
-    systems_nominal: false,
-    body_live: false,
-    vm_state: "OFFLINE",
-    last_updated: new Date().toISOString()
-  };
+  // Keep existing UI state on transient fetch failures.
+  return null;
 }
 
 export async function startBody() {

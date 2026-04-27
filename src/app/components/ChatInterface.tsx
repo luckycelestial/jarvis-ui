@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { chatWithJarvis, getChatSessions, getChatMessages } from "../actions";
+import { getChatSessions, getChatMessages } from "../actions";
 
 interface Message {
   role: "user" | "assistant";
@@ -98,6 +98,49 @@ export function ChatInterface() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedResponse = "";
+      let streamBuffer = "";
+      let eventDataLines: string[] = [];
+
+      const updateAssistantMessage = (content: string) => {
+        setMessages(prev => {
+          const newMsgs = [...prev];
+          if (newMsgs.length > 0) {
+            newMsgs[newMsgs.length - 1] = {
+              ...newMsgs[newMsgs.length - 1],
+              content,
+            };
+          }
+          return newMsgs;
+        });
+      };
+
+      const processEvent = () => {
+        if (eventDataLines.length === 0) return;
+
+        const payload = eventDataLines.join("\n");
+        eventDataLines = [];
+
+        try {
+          const data = JSON.parse(payload);
+
+          if (typeof data.token === "string") {
+            accumulatedResponse += data.token;
+            updateAssistantMessage(accumulatedResponse);
+          } else if (typeof data.response === "string") {
+            accumulatedResponse = data.response;
+            updateAssistantMessage(accumulatedResponse);
+          } else if (typeof data.error === "string" && !accumulatedResponse) {
+            accumulatedResponse = `Neural stream error: ${data.error}`;
+            updateAssistantMessage(accumulatedResponse);
+          }
+
+          if (data.session_id && !activeSession) {
+            setActiveSession(data.session_id);
+          }
+        } catch {
+          // Ignore malformed payload chunks and continue stream parsing.
+        }
+      };
       
       // Initialize assistant message
       setMessages(prev => [...prev, {
@@ -108,50 +151,31 @@ export function ChatInterface() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (value) {
+          streamBuffer += decoder.decode(value, { stream: !done });
+          const lines = streamBuffer.split(/\r?\n/);
+          streamBuffer = lines.pop() ?? "";
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
-        
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.token) {
-                accumulatedResponse += data.token;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  if (newMsgs.length > 0) {
-                    newMsgs[newMsgs.length - 1] = {
-                      ...newMsgs[newMsgs.length - 1],
-                      content: accumulatedResponse
-                    };
-                  }
-                  return newMsgs;
-                });
-              } else if (data.response) {
-                accumulatedResponse = data.response;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  if (newMsgs.length > 0) {
-                    newMsgs[newMsgs.length - 1] = {
-                      ...newMsgs[newMsgs.length - 1],
-                      content: accumulatedResponse
-                    };
-                  }
-                  return newMsgs;
-                });
-              }
-
-              if (data.session_id && !activeSession) {
-                setActiveSession(data.session_id);
-              }
-            } catch (e) {
-              // Ignore partial JSON chunks
+          for (const line of lines) {
+            if (line.startsWith("data:")) {
+              eventDataLines.push(line.slice(5).trimStart());
+            } else if (line.trim() === "") {
+              processEvent();
             }
           }
         }
+
+        if (done) {
+          if (streamBuffer.startsWith("data:")) {
+            eventDataLines.push(streamBuffer.slice(5).trimStart());
+          }
+          processEvent();
+          break;
+        }
+      }
+
+      if (!accumulatedResponse) {
+        updateAssistantMessage("No response received from neural stream.");
       }
 
       loadHistory();
