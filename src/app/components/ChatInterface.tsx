@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getChatSessions, getChatMessages } from "../actions";
+import { chatWithJarvis, getChatSessions, getChatMessages } from "../actions";
 
 interface Message {
   role: "user" | "assistant";
@@ -175,7 +175,9 @@ export function ChatInterface() {
       }
 
       if (!accumulatedResponse) {
-        updateAssistantMessage("No response received from neural stream.");
+        const fallback = await chatWithJarvis(input, activeSession);
+        const fallbackResponse = fallback?.response || "No response received from neural stream.";
+        updateAssistantMessage(fallbackResponse);
       }
 
       loadHistory();
