@@ -7,10 +7,8 @@ const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
 export async function getJarvisStatus() {
   const cacheBuster = Date.now();
   const HEAD_URL = `https://${HEAD_DOMAIN}/status?t=${cacheBuster}`;
-  const BODY_URL = `https://${BODY_DOMAIN}/status?t=${cacheBuster}`;
 
   let headData = null;
-  let bodyLive = false;
 
   // Ping Head
   try {
@@ -24,7 +22,7 @@ export async function getJarvisStatus() {
     } else {
       console.warn(`Head Gateway returned status: ${res.status}`);
     }
-  } catch (error) {
+  } catch {
     console.error("Head status fetch failed (unreachable):", HEAD_DOMAIN);
   }
 
@@ -38,10 +36,10 @@ export async function getJarvisStatus() {
   // Fallback if Head is completely unreachable
   return {
     head_status: "OFFLINE",
-    body_status: bodyLive ? "RUNNING" : "OFFLINE",
-    systems_nominal: bodyLive,
-    body_live: bodyLive,
-    vm_state: bodyLive ? "RUNNING" : "OFFLINE",
+    body_status: "OFFLINE",
+    systems_nominal: false,
+    body_live: false,
+    vm_state: "OFFLINE",
     last_updated: new Date().toISOString()
   };
 }
@@ -92,8 +90,7 @@ export async function runVMScript() {
       cache: 'no-store'
     });
     return await res.json();
-  } catch (error) {
-    console.error("Script execution failed:", error);
+  } catch {
     return { success: false, error: "Neural link timeout." };
   }
 }
