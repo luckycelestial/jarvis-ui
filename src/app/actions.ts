@@ -90,9 +90,9 @@ export async function runVMScript() {
   }
 }
 export async function getChatSessions() {
-  const BODY_URL = `https://${BODY_DOMAIN}/sessions`;
+  const HEAD_URL = `https://${HEAD_DOMAIN}/sessions`;
   try {
-    const res = await fetch(BODY_URL, {
+    const res = await fetch(HEAD_URL, {
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store'
     });
@@ -104,9 +104,9 @@ export async function getChatSessions() {
 }
 
 export async function getChatMessages(sessionId: string) {
-  const BODY_URL = `https://${BODY_DOMAIN}/messages/${sessionId}`;
+  const HEAD_URL = `https://${HEAD_DOMAIN}/messages/${sessionId}`;
   try {
-    const res = await fetch(BODY_URL, {
+    const res = await fetch(HEAD_URL, {
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store'
     });
