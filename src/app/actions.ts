@@ -77,17 +77,17 @@ export async function startBody() {
   }
 }
 
-export async function chatWithJarvis(prompt: string) {
-  const BODY_URL = `https://${BODY_DOMAIN}/query`;
+export async function chatWithJarvis(prompt: string, sessionId?: string | null) {
+  const HEAD_URL = `https://${HEAD_DOMAIN}/chat`;
 
   try {
-    const res = await fetch(BODY_URL, {
+    const res = await fetch(HEAD_URL, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
         "X-API-KEY": JARVIS_SECRET
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, session_id: sessionId }),
       cache: 'no-store'
     });
     return await res.json();
