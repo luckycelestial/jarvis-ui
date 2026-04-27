@@ -112,4 +112,30 @@ export async function runVMScript() {
     return { success: false, error: "Neural link timeout." };
   }
 }
+export async function getChatSessions() {
+  const BODY_URL = `https://${BODY_DOMAIN}/sessions`;
+  try {
+    const res = await fetch(BODY_URL, {
+      headers: { "X-API-KEY": JARVIS_SECRET },
+      cache: 'no-store'
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch sessions:", error);
+    return [];
+  }
+}
 
+export async function getChatMessages(sessionId: string) {
+  const BODY_URL = `https://${BODY_DOMAIN}/messages/${sessionId}`;
+  try {
+    const res = await fetch(BODY_URL, {
+      headers: { "X-API-KEY": JARVIS_SECRET },
+      cache: 'no-store'
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch messages:", error);
+    return [];
+  }
+}

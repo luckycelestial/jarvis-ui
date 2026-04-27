@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { chatWithJarvis } from "../actions";
+import { chatWithJarvis, getChatSessions, getChatMessages } from "../actions";
 
 interface Message {
-  role: "user" | "jarvis";
+  role: "user" | "assistant";
   content: string;
   timestamp: string;
 }
@@ -13,24 +13,35 @@ interface Message {
 interface ChatSession {
   id: string;
   title: string;
-  time: string;
-  preview: string;
+  updated_at: string;
 }
 
-const MOCK_HISTORY: ChatSession[] = [
-  { id: "1", title: "System Diagnostics", time: "Today", preview: "Run full diagnostics on all subsystems..." },
-  { id: "2", title: "Neural Wake Config", time: "Today", preview: "Configure wake parameters for body node..." },
-  { id: "3", title: "Security Audit", time: "Yesterday", preview: "Scan for unauthorized access attempts..." },
-  { id: "4", title: "Tab Automation", time: "Yesterday", preview: "Open research tabs for quantum computing..." },
-  { id: "5", title: "Core Memory Review", time: "Apr 24", preview: "Display memory utilization for last 24h..." },
-];
-
 export function ChatInterface() {
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadHistory = async () => {
+    const data = await getChatSessions();
+    if (data) setSessions(data);
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  useEffect(() => {
+    if (activeSession) {
+      const fetchMsgs = async () => {
+        const msgs = await getChatMessages(activeSession);
+        if (msgs) setMessages(msgs);
+      };
+      fetchMsgs();
+    }
+  }, [activeSession]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -54,11 +65,13 @@ export function ChatInterface() {
     try {
       const data = await chatWithJarvis(input);
       const jarvisMsg: Message = {
-        role: "jarvis",
+        role: "assistant",
         content: data.response || "Neural link timeout, Sir.",
         timestamp: new Date().toLocaleTimeString(),
       };
       setMessages(prev => [...prev, jarvisMsg]);
+      // Refresh session list to show new title/update
+      loadHistory();
     } catch {
       setMessages(prev => [...prev, {
         role: "jarvis",
@@ -95,7 +108,7 @@ export function ChatInterface() {
         {/* History List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           <div className="text-[8px] uppercase tracking-[0.4em] text-white/20 px-2 py-2">Recent Threads</div>
-          {MOCK_HISTORY.map((session) => (
+          {sessions.map((session) => (
             <button
               key={session.id}
               onClick={() => setActiveSession(session.id)}
@@ -111,9 +124,10 @@ export function ChatInterface() {
                 }`}>
                   {session.title}
                 </span>
-                <span className="text-[8px] text-white/20 shrink-0 ml-2">{session.time}</span>
+                <span className="text-[8px] text-white/20 shrink-0 ml-2">
+                  {new Date(session.updated_at).toLocaleDateString()}
+                </span>
               </div>
-              <div className="text-[8px] text-white/20 truncate">{session.preview}</div>
             </button>
           ))}
         </div>
@@ -138,7 +152,7 @@ export function ChatInterface() {
         {/* Chat Header */}
         <div className="px-6 py-3 border-b border-white/5 flex items-center justify-between shrink-0">
           <div className="text-[10px] uppercase tracking-[0.5em] text-stark-cyan/40">
-            {activeSession ? MOCK_HISTORY.find(s => s.id === activeSession)?.title : "New Conversation"}
+            {activeSession ? sessions.find(s => s.id === activeSession)?.title : "New Conversation"}
           </div>
           <div className="flex items-center gap-2 text-[8px] text-white/20 uppercase tracking-widest">
             <div className="w-1.5 h-1.5 rounded-full bg-stark-cyan/40 animate-pulse" />
@@ -183,7 +197,7 @@ export function ChatInterface() {
                     : 'bg-white/5 border border-white/10 text-foreground'}
                 `}>
                   <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">
-                    {msg.role === 'user' ? 'Stark' : 'Jarvis'} {"//"} {msg.timestamp}
+                    {msg.role === 'user' ? 'Stark' : 'Jarvis'} {"//"} {new Date(msg.timestamp).toLocaleTimeString()}
                   </div>
                   {msg.content}
                 </div>
