@@ -28,25 +28,10 @@ export async function getJarvisStatus() {
     console.error("Head status fetch failed (unreachable):", HEAD_DOMAIN);
   }
 
-  // Ping Body directly from Vercel
-  try {
-    const res = await fetch(BODY_URL, { 
-      headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(3000)
-    });
-    if (res.ok) bodyLive = true;
-  } catch (error) {
-    // console.log("Body node not yet reachable via public tunnel.");
-  }
-
-  // If Head couldn't reach Body but Vercel can, override the status!
+  // Note: We no longer ping Body directly from Vercel as it is internal (10.160.0.9)
+  // The Head node handles the internal proxying.
+  
   if (headData) {
-    if (bodyLive) {
-      headData.body_live = true;
-      headData.body_status = "RUNNING";
-      headData.systems_nominal = true;
-    }
     return headData;
   }
 

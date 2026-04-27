@@ -63,18 +63,23 @@ export function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const data = await chatWithJarvis(input);
+      const data = await chatWithJarvis(input, activeSession);
       const jarvisMsg: Message = {
         role: "assistant",
         content: data.response || "Neural link timeout, Sir.",
         timestamp: new Date().toLocaleTimeString(),
       };
       setMessages(prev => [...prev, jarvisMsg]);
+      
+      if (data.session_id && !activeSession) {
+        setActiveSession(data.session_id);
+      }
+
       // Refresh session list to show new title/update
       loadHistory();
     } catch {
       setMessages(prev => [...prev, {
-        role: "jarvis",
+        role: "assistant",
         content: "Connection interrupted. Retrying...",
         timestamp: new Date().toLocaleTimeString(),
       }]);
@@ -137,7 +142,7 @@ export function ChatInterface() {
           <div className="text-[8px] text-white/15 uppercase tracking-widest space-y-1">
             <div className="flex justify-between">
               <span>Total Threads</span>
-              <span className="text-stark-cyan/40">{MOCK_HISTORY.length}</span>
+              <span className="text-stark-cyan/40">{sessions.length}</span>
             </div>
             <div className="flex justify-between">
               <span>Neural Model</span>
