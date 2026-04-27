@@ -71,12 +71,13 @@ export async function chatWithJarvis(prompt: string, sessionId?: string | null) 
         "X-API-KEY": JARVIS_SECRET
       },
       body: JSON.stringify({ prompt, session_id: sessionId }),
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(30000)
     });
     return await res.json();
   } catch (error) {
     console.error("Chat failed:", error);
-    return { response: "Sir, the neural link to the Head Gateway is unstable.", status: "error" };
+    return { response: "Sir, I cannot reach the Head Gateway right now. Please verify head service health and tunnel connectivity.", status: "error" };
   }
 }
 

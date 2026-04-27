@@ -16,6 +16,29 @@ interface ChatSession {
   updated_at: string;
 }
 
+function formatTime(value?: string): string {
+  if (!value) return "--:--:--";
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString();
+  }
+
+  // Legacy rows may already be stored as time-only strings.
+  return value;
+}
+
+function formatDate(value?: string): string {
+  if (!value) return "NO DATE";
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString();
+  }
+
+  return "NO DATE";
+}
+
 export function ChatInterface() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -55,7 +78,7 @@ export function ChatInterface() {
     const userMsg: Message = {
       role: "user",
       content: input,
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -63,25 +86,81 @@ export function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const data = await chatWithJarvis(input, activeSession);
-      const jarvisMsg: Message = {
-        role: "assistant",
-        content: data.response || "Neural link timeout, Sir.",
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setMessages(prev => [...prev, jarvisMsg]);
-      
-      if (data.session_id && !activeSession) {
-        setActiveSession(data.session_id);
-      }
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: input, session_id: activeSession }),
+      });
 
-      // Refresh session list to show new title/update
-      loadHistory();
-    } catch {
+      if (!response.ok) throw new Error("Link failed");
+      if (!response.body) throw new Error("No neural stream");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedResponse = "";
+      
+      // Initialize assistant message
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: "Connection interrupted. Retrying...",
-        timestamp: new Date().toLocaleTimeString(),
+        content: "",
+        timestamp: new Date().toISOString(),
+      }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+        
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.token) {
+                accumulatedResponse += data.token;
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  if (newMsgs.length > 0) {
+                    newMsgs[newMsgs.length - 1] = {
+                      ...newMsgs[newMsgs.length - 1],
+                      content: accumulatedResponse
+                    };
+                  }
+                  return newMsgs;
+                });
+              } else if (data.response) {
+                accumulatedResponse = data.response;
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  if (newMsgs.length > 0) {
+                    newMsgs[newMsgs.length - 1] = {
+                      ...newMsgs[newMsgs.length - 1],
+                      content: accumulatedResponse
+                    };
+                  }
+                  return newMsgs;
+                });
+              }
+
+              if (data.session_id && !activeSession) {
+                setActiveSession(data.session_id);
+              }
+            } catch (e) {
+              // Ignore partial JSON chunks
+            }
+          }
+        }
+      }
+
+      loadHistory();
+    } catch (error) {
+      console.error("Neural link error:", error);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Connection interrupted. Sir, the neural link is unstable.",
+        timestamp: new Date().toISOString(),
       }]);
     } finally {
       setIsLoading(false);
@@ -130,7 +209,7 @@ export function ChatInterface() {
                   {session.title}
                 </span>
                 <span className="text-[8px] text-white/20 shrink-0 ml-2">
-                  {new Date(session.updated_at).toLocaleDateString()}
+                  {formatDate(session.updated_at)}
                 </span>
               </div>
             </button>
@@ -202,7 +281,7 @@ export function ChatInterface() {
                     : 'bg-white/5 border border-white/10 text-foreground'}
                 `}>
                   <div className="text-[10px] uppercase tracking-widest opacity-40 mb-2">
-                    {msg.role === 'user' ? 'Stark' : 'Jarvis'} {"//"} {new Date(msg.timestamp).toLocaleTimeString()}
+                    {msg.role === 'user' ? 'Stark' : 'Jarvis'} {"//"} {formatTime(msg.timestamp)}
                   </div>
                   {msg.content}
                 </div>
