@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
-const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
+const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
 
 export async function POST(req: NextRequest) {
   const { prompt, session_id } = await req.json();
@@ -10,10 +10,11 @@ export async function POST(req: NextRequest) {
     return new Response("Missing prompt", { status: 400 });
   }
 
-  const HEAD_URL = `https://${HEAD_DOMAIN}/stream`;
+  // Stream directly from Body VM
+  const BODY_URL = `https://${BODY_DOMAIN}/api/chat/stream`;
 
   try {
-    const response = await fetch(HEAD_URL, {
+    const response = await fetch(BODY_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
         const errorText = await response.text();
-        return new Response(`Head Gateway Error: ${errorText}`, { status: response.status });
+        return new Response(`Body Gateway Error: ${errorText}`, { status: response.status });
     }
 
     // Return the stream directly to the client

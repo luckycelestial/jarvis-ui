@@ -1,77 +1,97 @@
 "use server";
 
 const JARVIS_SECRET = process.env.JARVIS_SECRET || "stark-neural-link-alpha-99";
-const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
 const BODY_DOMAIN = process.env.BODY_DOMAIN || "body.cyberlabs.systems";
+const HEAD_DOMAIN = process.env.HEAD_DOMAIN || "head.cyberlabs.systems";
 const STATUS_TIMEOUT_MS = 12000;
 
 export async function getJarvisStatus() {
   const cacheBuster = Date.now();
-  const HEAD_URL = `https://${HEAD_DOMAIN}/status?t=${cacheBuster}`;
 
-  let headData = null;
-
-  // Ping Head
+  // Try Body directly first (primary path — no Head Gateway needed)
   try {
-    const res = await fetch(HEAD_URL, { 
+    const bodyRes = await fetch(`https://${BODY_DOMAIN}/status?t=${cacheBuster}`, {
       headers: { "X-API-KEY": JARVIS_SECRET },
       cache: 'no-store',
-      signal: AbortSignal.timeout(STATUS_TIMEOUT_MS)
+      signal: AbortSignal.timeout(STATUS_TIMEOUT_MS),
     });
-    if (res.ok) {
-      headData = await res.json();
-    } else {
-      console.warn(`Head Gateway returned status: ${res.status}`);
+    if (bodyRes.ok) {
+      const bodyData = await bodyRes.json();
+      // Body returns { status, mode, connections, active_requests }
+      // Normalize to the format the UI expects
+      return {
+        body_status: bodyData.status === "online" ? "RUNNING" : "OFFLINE",
+        head_status: "STANDBY",
+        systems_nominal: bodyData.status === "online",
+        body_live: bodyData.status === "online",
+        vm_state: bodyData.status === "online" ? "RUNNING" : "UNKNOWN",
+      };
     }
   } catch {
-    console.error("Head status fetch failed (unreachable):", HEAD_DOMAIN);
+    // Body unreachable
   }
 
-  // Note: We no longer ping Body directly from Vercel as it is internal (10.160.0.9)
-  // The Head node handles the internal proxying.
-  
-  if (headData) {
-    return headData;
+  // Fallback: Try Head Gateway if Body is down
+  try {
+    const headRes = await fetch(`https://${HEAD_DOMAIN}/status?t=${cacheBuster}`, {
+      headers: { "X-API-KEY": JARVIS_SECRET },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(STATUS_TIMEOUT_MS),
+    });
+    if (headRes.ok) {
+      return await headRes.json();
+    }
+  } catch {
+    // Head also unreachable
   }
 
-  // Keep existing UI state on transient fetch failures.
-  return null;
+  // Both nodes unreachable
+  return {
+    body_status: "OFFLINE",
+    head_status: "OFFLINE",
+    systems_nominal: false,
+  };
 }
 
 export async function startBody() {
+  // Try Head Gateway to start Body VM (if Head is available)
   const HEAD_URL = `https://${HEAD_DOMAIN}/start_body`;
-
   try {
-    const res = await fetch(HEAD_URL, { 
+    const res = await fetch(HEAD_URL, {
       method: "POST",
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15000),
     });
     return res.ok;
-  } catch (error) {
-    console.error("Body activation failed:", error);
+  } catch {
+    console.error("Body activation failed: Head Gateway unreachable");
     return false;
   }
 }
 
 export async function chatWithJarvis(prompt: string, sessionId?: string | null) {
-  const HEAD_URL = `https://${HEAD_DOMAIN}/chat`;
+  // Talk directly to Body VM
+  const BODY_URL = `https://${BODY_DOMAIN}/query`;
 
   try {
-    const res = await fetch(HEAD_URL, {
+    const res = await fetch(BODY_URL, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "X-API-KEY": JARVIS_SECRET
+        "X-API-KEY": JARVIS_SECRET,
       },
       body: JSON.stringify({ prompt, session_id: sessionId }),
       cache: 'no-store',
-      signal: AbortSignal.timeout(30000)
+      signal: AbortSignal.timeout(60000),
     });
     return await res.json();
   } catch (error) {
     console.error("Chat failed:", error);
-    return { response: "Sir, I cannot reach the Head Gateway right now. Please verify head service health and tunnel connectivity.", status: "error" };
+    return {
+      response: "Sir, the Body node is unreachable. The neural link may be offline.",
+      status: "error",
+    };
   }
 }
 
@@ -82,19 +102,20 @@ export async function runVMScript() {
     const res = await fetch(BODY_URL, {
       method: "POST",
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
     });
     return await res.json();
   } catch {
     return { success: false, error: "Neural link timeout." };
   }
 }
+
 export async function getChatSessions() {
-  const HEAD_URL = `https://${HEAD_DOMAIN}/sessions`;
+  const BODY_URL = `https://${BODY_DOMAIN}/sessions`;
   try {
-    const res = await fetch(HEAD_URL, {
+    const res = await fetch(BODY_URL, {
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
     });
     return await res.json();
   } catch (error) {
@@ -104,11 +125,11 @@ export async function getChatSessions() {
 }
 
 export async function getChatMessages(sessionId: string) {
-  const HEAD_URL = `https://${HEAD_DOMAIN}/messages/${sessionId}`;
+  const BODY_URL = `https://${BODY_DOMAIN}/messages/${sessionId}`;
   try {
-    const res = await fetch(HEAD_URL, {
+    const res = await fetch(BODY_URL, {
       headers: { "X-API-KEY": JARVIS_SECRET },
-      cache: 'no-store'
+      cache: 'no-store',
     });
     return await res.json();
   } catch (error) {
